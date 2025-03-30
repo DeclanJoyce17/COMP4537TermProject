@@ -37,14 +37,16 @@ app.get('/transcribe', (req, res) => {
     res.sendFile(path.join(__dirname, '../Frontend/views/transcribe.html'));
 });
 
+app.get('/signup', (req, res) => {
+    res.sendFile(path.join(__dirname, '../Frontend/views/signup.html'));
+});
+
 app.use(cors({
-    origin: "http://localhost:5500", // Allow all origins (for development)
+    origin: "*", // Allow all origins (for development)
     methods: "GET,POST,PUT, DELETE,OPTIONS",
     allowedHeaders: "Content-Type, Authorization",
     credentials: true
 }));
-
-
 
 async function initMongoDB() {
     try {
@@ -143,7 +145,7 @@ app.post("/api/login", async (req, res) => {
 
         // Compare hashed password from the client with the hashed password in the database
         const hashedPasswordFromDB = user.password;
-        const hashedPasswordFromClient = password; 
+        const hashedPasswordFromClient = password;
 
         if (hashedPasswordFromClient !== hashedPasswordFromDB) {
             return res.status(401).json({ message: "Invalid credentials" });
@@ -164,11 +166,11 @@ app.post("/api/login", async (req, res) => {
             // maxAge: 5000 // I was just testing, so I set it to 5 seconds
         });
 
-        if(user.isAdmin === "true"){
-            res.status(200).json({ message: "Login successful", admin:"True" });
+        if (user.isAdmin === "true") {
+            res.status(200).json({ message: "Login successful", admin: "True" });
 
-        } else{
-            res.status(200).json({ message: "Login successful", admin:"False" });
+        } else {
+            res.status(200).json({ message: "Login successful", admin: "False" });
         }
     } catch (error) {
         console.error("Login error:", error);
