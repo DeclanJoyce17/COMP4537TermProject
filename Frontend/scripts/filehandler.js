@@ -1,5 +1,4 @@
 // Recording variables
-const site = "http://localhost:3000"
 let mediaRecorder;
 let audioStream;
 let audioChunks = [];
@@ -165,8 +164,6 @@ async function convertToWav(audioBlob) {
     }
 }
 
-// Helper functions for WAV conversion...
-
 // Upload audio file (unchanged from previous version)
 async function uploadAudio() {
     const file = audioFileInput.files[0];
@@ -196,13 +193,10 @@ async function sendAudioToServer(audioBlob, filename) {
     formData.append('audio', audioBlob, filename);
 
     try {
-        const response = await fetch("https://comp4537termproject-nq15.onrender.com/api/transcribe", { // Fixed URL
+        const response = await fetch("transcribe/api/transcribe", { // Fixed URL
             method: 'POST',
             body: formData,
-            credentials: 'include', // Required for cookies
-            headers: {
-                "Content-Type": "application/json",
-            }
+            credentials: 'include',
         });
 
         if (!response.ok) {
