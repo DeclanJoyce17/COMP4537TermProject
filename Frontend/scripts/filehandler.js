@@ -116,8 +116,6 @@ async function stopRecording() {
     }
 }
 
-// [Rest of the functions remain the same...]
-
 // Clean up recording resources
 function cleanupRecording() {
     if (audioStream) {
@@ -198,20 +196,27 @@ async function sendAudioToServer(audioBlob, filename) {
     formData.append('audio', audioBlob, filename);
 
     try {
-        const response = await fetch("https://comp4537termproject-1.onrender.com//transcribe/api/transcribe", {
+        const response = await fetch("https://comp4537termproject-nq15.onrender.com/api/transcribe", { // Fixed URL
             method: 'POST',
-            body: formData
+            body: formData,
+            credentials: 'include', // Required for cookies
+            headers: {
+                'Accept': 'application/json',
+                // 'Authorization': `Bearer ${yourToken}` // Add if using auth
+            }
         });
 
         if (!response.ok) {
-            throw new Error(`Server error: ${response.status}`);
+            const errorData = await response.json(); // Get server error details
+            throw new Error(errorData.message || `Server error: ${response.status}`);
         }
 
         const data = await response.json();
         transcriptionOutput.textContent = data.text || 'No transcription returned';
+        return data;
     } catch (error) {
-        console.error('Server error:', error);
-        transcriptionOutput.textContent = 'Error: Failed to communicate with server';
+        console.error('Request failed:', error);
+        transcriptionOutput.textContent = 'Error: ' + (error.message || 'Failed to communicate with server');
         throw error;
     }
 }
