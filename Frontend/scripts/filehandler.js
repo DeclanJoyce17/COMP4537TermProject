@@ -201,8 +201,7 @@ async function sendAudioToServer(audioBlob, filename) {
             body: formData,
             credentials: 'include', // Required for cookies
             headers: {
-                'Accept': 'application/json',
-                // 'Authorization': `Bearer ${yourToken}` // Add if using auth
+                "Content-Type": "application/json",
             }
         });
 
