@@ -198,7 +198,7 @@ async function sendAudioToServer(audioBlob, filename) {
     formData.append('audio', audioBlob, filename);
 
     try {
-        const response = await fetch(`${site}/transcribe/api/transcribe`, {
+        const response = await fetch("https://comp4537termproject-1.onrender.com//transcribe/api/transcribe", {
             method: 'POST',
             body: formData
         });
