@@ -21,10 +21,10 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 // I moved this up
 app.use(cors({
-    origin: "*",
-    credentials: true, // Ensure cookies are sent
+    origin: "http://localhost:5000",
+    credentials: true,
     methods: "GET,POST,PUT,DELETE,OPTIONS",
-    allowedHeaders: ["Content-Type", "Authorization", "Accept", "X-Requested-With"]
+    allowedHeaders: ["Content-Type", "Authorization", "Accept"]
 }));
 
 // I just added this
@@ -59,6 +59,13 @@ app.get('/transcribe', (req, res) => {
     res.sendFile(path.join(__dirname, '../Frontend/views/transcribe.html'));
 });
 
+app.get('/signup', (req, res) => {
+    res.sendFile(path.join(__dirname, '../Frontend/views/signup.html'));
+});
+
+app.get('/login', (req, res) => {
+    res.sendFile(path.join(__dirname, '../Frontend/views/login.html'));
+});
 
 async function initMongoDB() {
     try {

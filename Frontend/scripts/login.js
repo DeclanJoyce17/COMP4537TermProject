@@ -1,4 +1,4 @@
-const site = "http://localhost:5000"
+const site = "https://comp4537termproject-1.onrender.com"
 
 function showWarning(message) {
     const errorDiv = document.getElementById("error-message");

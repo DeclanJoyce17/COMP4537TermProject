@@ -214,6 +214,31 @@ async function uploadAudio() {
 
 // Send audio to server (unchanged from previous version)
 async function sendAudioToServer(file, filename) {
+
+
+    try {
+        console.log("Testing FFmpeg installation...");
+        const ffmpegTest = await fetch(`${site}/transcribe/test-ffmpeg`, {
+            method: 'GET',
+            credentials: 'include',
+            headers: {
+                'Accept': 'application/json', // We expect JSON back
+            }
+        });
+
+        if (!ffmpegTest.ok) {
+            throw new Error("FFmpeg test failed");
+        }
+
+        const ffmpegResult = await ffmpegTest.text();
+        console.log("FFmpeg test successful:", ffmpegResult);
+    } catch (error) {
+        console.error("FFmpeg test failed:", error);
+        transcriptionOutput.textContent = "Error: Server processing unavailable (FFmpeg error)";
+        return; // Don't proceed with upload if FFmpeg isn't working
+    }
+
+
     const formData = new FormData();
     formData.append('audio', file);
 
@@ -228,9 +253,7 @@ async function sendAudioToServer(file, filename) {
             headers: {
                 // These MUST match Access-Control-Allow-Headers exactly:
                 'Content-Type': 'multipart/form-data',
-                'Accept': 'application/json',
-                'Authorization': `Bearer ${token}`,
-                'X-Requested-With': 'XMLHttpRequest' // If using
+                'Accept': 'application/json'
             }
         });
 
