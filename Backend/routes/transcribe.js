@@ -37,14 +37,14 @@ async function loadModel() {
         const transformers = await import('@xenova/transformers');
         const pipeline = transformers.pipeline;
 
-        console.log('Loading Whisper-base from Hugging Face...');
+        console.log('Loading Whisper-tiny from Hugging Face...');
 
-        transcriber = await pipeline('automatic-speech-recognition', 'Xenova/whisper-base', {
+        transcriber = await pipeline('automatic-speech-recognition', 'Xenova/whisper-tiny', {
             quantized: true,
             device: 'cpu',
         });
 
-        console.log('Whisper-base loaded successfully');
+        console.log('Whisper-tiny loaded successfully');
     }
     return transcriber;
 }
