@@ -10,7 +10,10 @@ const router = express.Router();
 const { User, ResetToken, APICount } = require("../models");
 const { quantize } = require('bitsandbytes');
 
-const MODEL_PATH = path.join(process.cwd(), '/models/whisper-base'); // Ensure correct model path
+const MODEL_PATH = path.normalize(path.join(process.cwd(), 'models', 'whisper-base'));
+process.env.TRANSFORMERS_CACHE = MODEL_PATH;
+process.env.HF_HUB_OFFLINE = "1";
+process.env.LOCAL_MODELS_DIR = MODEL_PATH;
 
 // Set up multer for file upload
 const upload = multer({ dest: 'uploads/' });
@@ -48,27 +51,36 @@ router.post('/api/transcribe', upload.single('audio'), async (req, res) => {
     }
 });
 
-// Load model once and reuse it
-let transcriber;
-let pipeline;
+let transcriber = null;  // Declare transcriber globally
 
 async function loadModel() {
     if (!transcriber) {
-        const transformers = await import('@xenova/transformers');
-        pipeline = transformers.pipeline;
+        const { pipeline, AutoProcessor, WhisperForConditionalGeneration } = await import('@xenova/transformers');
 
-        console.log('Loading Whisper model from local path...');
+        console.log('Loading Whisper model from:', MODEL_PATH);
 
-        // Set the environment variable to point to your local model path
-        process.env.HF_HOME = path.join(process.cwd(), 'models'); // Ensure local model path
+        try {
+            // Verify files exist first
+            verifyModelFiles();
 
-        // Load the local Whisper model using the correct model path
-        transcriber = await pipeline('automatic-speech-recognition', MODEL_PATH, {
-            cache_dir: process.env.HF_HOME,  // Set to the local directory where the model is stored
-            use_auth_token: false            // Avoid using an auth token to prevent remote downloads
-        });
+            // Manually create processor
+            const processor = await AutoProcessor.from_pretrained(MODEL_PATH, {
+                local_files_only: true,
+                feature_extractor_type: "WhisperFeatureExtractor"
+            });
 
-        console.log('Local model loaded successfully');
+            // Create pipeline with explicit local files
+            transcriber = await pipeline('automatic-speech-recognition', {
+                model: MODEL_PATH,
+                processor: processor,
+                local_files_only: true
+            });
+
+            console.log('Model loaded successfully');
+        } catch (error) {
+            console.error('Model loading error:', error);
+            throw error;
+        }
     }
     return transcriber;
 }
@@ -76,6 +88,9 @@ async function loadModel() {
 
 // Main transcription function
 async function transcribeAudio(audioPath) {
+    process.env.HF_HUB_OFFLINE = "1"; // Force offline mode
+    process.env.HF_HUB_DISABLE_SYMLINKS = "1";
+
     const transcriber = await loadModel();
     const tempDir = path.join(os.tmpdir(), `temp-audio-${Date.now()}`);
     fs.mkdirSync(tempDir);
@@ -140,5 +155,24 @@ async function splitAudio(audioPath, outputDir, chunkSeconds = 10) {
             .run();
     });
 }
+
+function verifyModelFiles() {
+    const requiredFiles = [
+        'preprocessor_config.json',
+        'tokenizer_config.json',
+        'config.json',
+        path.join('onnx', 'encoder_model.onnx')
+    ];
+
+    requiredFiles.forEach(file => {
+        const fullPath = path.join(MODEL_PATH, file);
+        if (!fs.existsSync(fullPath)) {
+            throw new Error(`Missing required model file: ${fullPath}`);
+        }
+    });
+}
+
+// Call this before loadModel()
+verifyModelFiles();
 
 module.exports = router;
