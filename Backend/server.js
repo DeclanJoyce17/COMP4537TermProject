@@ -22,7 +22,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 // I moved this up
 app.use(cors({
-    origin: "https://4537projectfrontend.netlify.app",
+    origin: "*",
     credentials: true, // Ensure cookies are sent
     methods: "GET,POST,PUT,DELETE,OPTIONS",
     allowedHeaders: ["Content-Type", "Authorization"]
@@ -214,7 +214,7 @@ app.post("/api/login", async (req, res) => {
             res.status(200).json({ message: MESSAGES.warning_login_success, admin: "False" });
         }
     } catch (error) {
-        // console.error("Login error:", error); // we don't console log
+        console.error("Login error:", error); // we don't console log
         res.status(500).json({ message: MESSAGES.warning_generic });
     }
 });

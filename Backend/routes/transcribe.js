@@ -25,18 +25,7 @@ router.post('/api/transcribe', upload.single('audio'), async (req, res) => {
 
 
     const count = await APICount.findOne({ api: "/transcribe/api/transcribe" });
-            if (!count) {
-                const newEntry = new APICount({
-                    api: "/transcribe/api/transcribe",
-                    count: 1,
-                    method: "POST"
-                });
-                await newEntry.save();
-    
-            } else {
-                count.count = count.count + 1;
-                await newEntry.save();
-            }
+
 
     try {
         const transcription = await transcribeAudio(req.file.path); // Transcribe the uploaded file

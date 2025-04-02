@@ -1,5 +1,5 @@
 console.log('testing0')
-const site = "https://comp4537termproject-1.onrender.com"
+const site = "http://localhost:5000"
 document.addEventListener("DOMContentLoaded", async () => {
     try {
         // Check if the user is an admin
@@ -9,14 +9,14 @@ document.addEventListener("DOMContentLoaded", async () => {
         console.log(userData.user.isAdmin)
         console.log(userData.success)
 
-        
+
 
         if (!userData || !userData.user || userData.user.isAdmin == "false" || userData.user.isAdmin == "undefined") {
             console.log('ohio asl wth')
             alert("Error 403: You do not have permission to view this page.");
             window.location.href = "./home.html"; // Redirect non-admins
             return;
-        }        
+        }
         console.log('ohio 2')
         // Fetch list of users
         const usersResponse = await fetch(`${site}/api/admin/users`, { credentials: "include" });

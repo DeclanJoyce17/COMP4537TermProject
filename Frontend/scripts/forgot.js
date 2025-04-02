@@ -1,9 +1,9 @@
-const site = "https://comp4537termproject-1.onrender.com"
+const site = "http://localhost:5000"
 
 async function forgotPassword(event) {
     event.preventDefault(); // Prevent form from submitting
     const email = document.getElementById("email").value;
-  
+
     // Validate the email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
@@ -13,7 +13,7 @@ async function forgotPassword(event) {
     const requestData = {
         email: email
     };
-  
+
     try {
         // Send POST request to the backend
         const response = await fetch(`${site}/api/reset`, {
@@ -23,10 +23,10 @@ async function forgotPassword(event) {
             },
             body: JSON.stringify(requestData),
         });
-  
+
         if (response.ok) {
             document.querySelector("#confirmation").innerHTML = "Password Reset Email is Sent"
-  
+
         } else {
             // Handle login failure
             alert("Email failed to send. Please check your credentials and try again.");
@@ -35,11 +35,11 @@ async function forgotPassword(event) {
         console.error("Error:", error);
         alert("An error occurred. Please try again later.");
     }
-  }
+}
 
-  async function resetPassword(event) {
+async function resetPassword(event) {
     event.preventDefault(); // Prevent form from submitting
-  
+
     const urlParams = new URLSearchParams(window.location.search);
     const email = urlParams.get('email');
     const token = urlParams.get('token');
@@ -52,13 +52,13 @@ async function forgotPassword(event) {
         return;
     }
     const hashedPassword = await hashPassword(password);
-  
+
     const requestData = {
         email: email,
         token: token,
         newPassword: hashedPassword
     };
-  
+
     try {
         // Send POST request to the backend
         const response = await fetch(`${site}/api/reset/resetPassword`, {
@@ -69,10 +69,10 @@ async function forgotPassword(event) {
             body: JSON.stringify(requestData),
             // credentials: "include"
         });
-  
+
         if (response.ok) {
             document.querySelector("#confirmation").innerHTML = "Password is reset"
-  
+
         } else {
             // Handle login failure
             alert("Password reset failed. Please check your credentials and try again.");
@@ -81,10 +81,10 @@ async function forgotPassword(event) {
         console.error("Error:", error);
         alert("An error occurred. Please try again later.");
     }
-  }
+}
 
 
-  // Hashing function you already have
+// Hashing function you already have
 async function hashPassword(password) {
     const encoder = new TextEncoder();
     const data = encoder.encode(password);
