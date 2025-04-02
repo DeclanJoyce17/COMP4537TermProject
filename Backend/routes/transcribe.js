@@ -10,7 +10,7 @@ const router = express.Router();
 const { User, ResetToken, APICount } = require("../models");
 const { quantize } = require('bitsandbytes');
 
-const MODEL_PATH = path.join(process.cwd(), '/models/whisper-small'); // Ensure correct model path
+const MODEL_PATH = path.join(process.cwd(), '/models/whisper-base'); // Ensure correct model path
 
 // Set up multer for file upload
 const upload = multer({ dest: 'uploads/' });
@@ -53,23 +53,26 @@ let transcriber;
 let pipeline;
 
 async function loadModel() {
-    if (!pipeline) {
+    if (!transcriber) {
         const transformers = await import('@xenova/transformers');
         pipeline = transformers.pipeline;
 
         console.log('Loading Whisper model from local path...');
 
-        // Set the environment variable to use local cache
-        process.env.HF_HOME = path.join(process.cwd(), 'models');
+        // Set the environment variable to point to your local model path
+        process.env.HF_HOME = path.join(process.cwd(), 'models'); // Ensure local model path
 
-        transcriber = await pipeline('automatic-speech-recognition', 'whisper-base', {
-            cache_dir: process.env.HF_HOME // Ensure model is loaded from local storage
+        // Load the local Whisper model using the correct model path
+        transcriber = await pipeline('automatic-speech-recognition', MODEL_PATH, {
+            cache_dir: process.env.HF_HOME,  // Set to the local directory where the model is stored
+            use_auth_token: false            // Avoid using an auth token to prevent remote downloads
         });
 
         console.log('Local model loaded successfully');
     }
     return transcriber;
 }
+
 
 // Main transcription function
 async function transcribeAudio(audioPath) {
