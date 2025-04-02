@@ -9,22 +9,8 @@ const router = express.Router();
 const { User, ResetToken, APICount } = require("../models");
 const upload = multer({ dest: 'uploads/' });
 
-// const { exec } = require('child_process');
-// router.get('/test-ffmpeg', (req, res) => {
-//     exec('ffmpeg -version', (err, stdout, stderr) => {
-//         if (err) {
-//             console.error('FFmpeg test failed:', err);
-//             return res.status(500).send('FFmpeg not installed');
-//         }
-//         // Corrected the response syntax
-//         res.send(`<pre>FFmpeg installed:\n${stdout}</pre>`);
-//     });
-// });
-
 // Route to handle audio file upload and transcription
 router.post('/api/transcribe', upload.single('audio'), async (req, res) => {
-
-    console.log("Screw this")
 
     if (!req.file) {
         return res.status(400).json({ error: 'No file uploaded' }); // Return error if no file was uploaded
@@ -40,97 +26,74 @@ router.post('/api/transcribe', upload.single('audio'), async (req, res) => {
         console.error('Error during transcription:', error);
         res.status(500).json({ error: 'Error during transcription' }); // Handle errors
     }
+
 });
 
 // Load model once and reuse it
-let transcriber;
-let pipeline;
+let transcriber = null;
 
 async function loadModel() {
-    if (!pipeline) {
+    if (!transcriber) {
         const transformers = await import('@xenova/transformers');
-        pipeline = transformers.pipeline;
+        const pipeline = transformers.pipeline;
 
-        console.log('Loading Whisper model from local path...');
+        console.log('Loading Whisper-Medium small from Hugging Face...');
 
-        // Set the environment variable to use local cache
-        process.env.HF_HOME = path.join(process.cwd(), 'models');
-
-        transcriber = await pipeline('automatic-speech-recognition', 'whisper-tiny', {
-            cache_dir: process.env.HF_HOME,
-            local_files_only: true,
-            quantized: true,  // Use quantized model if available
-            device: 'cpu',    // Force CPU if GPU memory is constrained
-            chunk_length_s: 10,  // Process in smaller chunks
-            stride_length_s: [5, 5]  // Overlap chunks slightly
+        transcriber = await pipeline('automatic-speech-recognition', 'Xenova/whisper-small', {
+            quantized: true,
+            device: 'cpu',
         });
 
-        console.log('Local model loaded successfully');
+        console.log('Whisper-Medium small loaded successfully');
     }
     return transcriber;
 }
 
-// Main transcription function
 async function transcribeAudio(audioPath) {
     const transcriber = await loadModel();
-    const tempDir = path.join(os.tmpdir(), `temp-audio-${Date.now()}`);
-    fs.mkdirSync(tempDir);
+    let wavPath = path.join(path.dirname(audioPath), 'converted.wav'); // Define wavPath before try block
 
     try {
-        // Split into smaller chunks (10 seconds each)
-        await splitAudio(audioPath, tempDir, 10);
-        const chunkFiles = fs.readdirSync(tempDir)
-            .map(file => path.join(tempDir, file))
-            .sort();
+        console.log("Processing audio:", audioPath);
 
-        const allTranscriptions = [];
+        // Convert to WAV format with 16kHz, mono
+        await convertToWav(audioPath, wavPath);
 
-        for (const chunkFile of chunkFiles) {
-            try {
-                const chunkData = fs.readFileSync(chunkFile);
-                const decodedAudio = await wavDecoder.decode(chunkData);
+        // Read the converted WAV file
+        const audioBuffer = fs.readFileSync(wavPath);
 
-                const result = await transcriber(decodedAudio.channelData[0], {
-                    language: "en", // Force output in English
-                    return_timestamps: false
-                });
+        // Decode WAV to PCM float array
+        const decodedAudio = await wavDecoder.decode(audioBuffer);
+        const float32Array = new Float32Array(decodedAudio.channelData[0]); // Extract first channel
 
+        const result = await transcriber(float32Array, {
+            language: "en",
+            return_timestamps: false
+        });
 
-                allTranscriptions.push(result.text);
-            } finally {
-                fs.unlinkSync(chunkFile);
-                if (global.gc) global.gc();  // Manually trigger garbage collection
-            }
-        }
-
-        return allTranscriptions.join(' ');
+        console.log("Transcription result:", result.text);
+        return result.text;
     } catch (error) {
-        console.error('Transcription failed:', error);
+        console.error("Transcription failed:", error);
         throw error;
     } finally {
-        // Cleanup
         try {
-            fs.unlinkSync(audioPath);
-            fs.rmdirSync(tempDir);
+            if (fs.existsSync(audioPath)) fs.unlinkSync(audioPath); // Delete original file
+            if (fs.existsSync(wavPath)) fs.unlinkSync(wavPath); // Delete converted WAV file
         } catch (cleanupError) {
-            console.error('Cleanup failed:', cleanupError);
+            console.error("Failed to delete files:", cleanupError);
         }
     }
 }
 
-async function splitAudio(audioPath, outputDir, chunkSeconds = 10) {
+// Function to convert any audio file to WAV
+async function convertToWav(inputPath, outputPath) {
     return new Promise((resolve, reject) => {
-        ffmpeg(audioPath)
-            .audioChannels(1)
-            .audioFrequency(16000)
-            .outputOptions([
-                '-f', 'segment',
-                '-segment_time', chunkSeconds.toString(),
-                '-c:a', 'pcm_s16le',  // 16-bit WAV format
-                '-ar', '16000',
-                '-ac', '1'
-            ])
-            .output(path.join(outputDir, 'chunk-%03d.wav'))
+        ffmpeg(inputPath)
+            .output(outputPath)
+            .audioChannels(1) // Mono audio
+            .audioFrequency(16000) // 16kHz sample rate
+            .format('wav') // Ensure WAV format
             .on('end', resolve)
             .on('error', reject)
             .run();
