@@ -28,7 +28,7 @@ app.use(cors({
 }));
 
 // I just added this
-app.options("*", cors()); // Allows preflight requests for all routes
+app.options("http://localhost:5000", cors()); // Allows preflight requests for all routes
 
 const port = process.env.PORT || 3000;
 const mongoUri = process.env.MONGO_URI;
