@@ -304,20 +304,6 @@ app.delete("/api/admin/delete/:id", isAdminMiddleware, async (req, res) => {
     }
 });
 
-
-const { exec } = require('child_process');
-
-router.get('/test-ffmpeg', (req, res) => {
-    exec('ffmpeg -version', (err, stdout, stderr) => {
-        if (err) {
-            console.error('FFmpeg test failed:', err);
-            return res.status(500).send('FFmpeg not installed');
-        }
-        res.send(`<pre>FFmpeg installed:\n${stdout}</pre>`);
-    });
-});
-
-
 // Start Express Server AFTER DB Connection
 initMongoDB().then(() => {
     // Start the server

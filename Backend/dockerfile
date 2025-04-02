@@ -3,7 +3,7 @@ FROM node:18-slim
 # Install FFmpeg (works because Docker has write access)
 RUN apt-get update && apt-get install -y ffmpeg
 
-WORKDIR /app
+WORKDIR /server
 COPY package*.json ./
 RUN npm install
 COPY . .
