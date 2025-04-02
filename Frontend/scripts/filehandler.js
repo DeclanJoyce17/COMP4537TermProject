@@ -162,7 +162,7 @@ async function prepareAndSendAudio(file) {
     console.log("Starting fetch request...");
 
     try {
-        const response = await fetch(`/transcribe/api/transcribe`, {
+        const response = await fetch(`${site}/transcribe/api/transcribe`, {
             method: 'POST',
             body: formData,
             keepalive: true,
