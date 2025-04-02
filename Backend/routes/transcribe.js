@@ -57,7 +57,12 @@ async function loadModel() {
         process.env.HF_HOME = path.join(process.cwd(), 'models');
 
         transcriber = await pipeline('automatic-speech-recognition', 'whisper-base', {
-            cache_dir: process.env.HF_HOME // Ensure model is loaded from local storage
+            cache_dir: process.env.HF_HOME,
+            local_files_only: true,
+            quantized: true,  // Use quantized model if available
+            device: 'cpu',    // Force CPU if GPU memory is constrained
+            chunk_length_s: 10,  // Process in smaller chunks
+            stride_length_s: [5, 5]  // Overlap chunks slightly
         });
 
         console.log('Local model loaded successfully');
