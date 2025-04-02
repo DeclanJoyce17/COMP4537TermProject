@@ -1,5 +1,5 @@
 // Recording variables
-const site = "https://comp4537termproject-1-181a.onrender.com"
+const site = "https://comp4537termproject-2.onrender.com"
 let mediaRecorder;
 let audioStream;
 let audioChunks = [];
@@ -249,12 +249,7 @@ async function sendAudioToServer(file, filename) {
             method: 'POST',
             body: formData,
             keepalive: true,
-            credentials: 'include',
-            headers: {
-                // These MUST match Access-Control-Allow-Headers exactly:
-                'Content-Type': 'multipart/form-data',
-                'Accept': 'application/json'
-            }
+            credentials: 'include'
         });
 
         console.log("Fetch response received:", response);

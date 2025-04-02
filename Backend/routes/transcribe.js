@@ -55,7 +55,17 @@ router.post('/api/transcribe', upload.single('audio'), async (req, res) => {
 let transcriber;
 async function loadModel() {
     if (!transcriber) {
-        transcriber = await pipeline('automatic-speech-recognition', MODEL_PATH);
+        console.log('Loading Whisper model with memory optimizations...');
+        transcriber = await pipeline('automatic-speech-recognition', MODEL_PATH, {
+            device: -1, // Force CPU only
+            torch_dtype: 'fp16', // Use half-precision
+            low_cpu_mem_usage: true, // Critical for memory savings
+            revision: 'fp16', // Load pre-converted FP16 version
+            cache_dir: null, // Disable caching to save RAM
+            local_files_only: true // Prevent unexpected downloads
+        });
+
+        console.log('Model loaded with FP16 precision');
     }
     return transcriber;
 }
