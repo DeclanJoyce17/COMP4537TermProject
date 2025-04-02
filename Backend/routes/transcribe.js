@@ -62,7 +62,7 @@ async function loadModel() {
         // Set the environment variable to use local cache
         process.env.HF_HOME = path.join(process.cwd(), 'models');
 
-        transcriber = await pipeline('automatic-speech-recognition', 'whisper-small', {
+        transcriber = await pipeline('automatic-speech-recognition', 'whisper-base', {
             cache_dir: process.env.HF_HOME // Ensure model is loaded from local storage
         });
 
