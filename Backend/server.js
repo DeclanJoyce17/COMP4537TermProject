@@ -5,7 +5,6 @@ const mongoose = require('mongoose');
 const swaggerUi = require('swagger-ui-express');
 const { User, ResetToken, APICount } = require("./models");
 
-
 const jwt = require('jsonwebtoken');
 const cookieParser = require('cookie-parser');
 const crypto = require('crypto');
@@ -25,7 +24,7 @@ app.use(cors({
     origin: "*",
     credentials: true, // Ensure cookies are sent
     methods: "GET,POST,PUT,DELETE,OPTIONS",
-    allowedHeaders: ["Content-Type", "Authorization"]
+    allowedHeaders: ["Content-Type", "Authorization", "Accept", "X-Requested-With"]
 }));
 
 // I just added this

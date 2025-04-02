@@ -223,7 +223,15 @@ async function sendAudioToServer(file, filename) {
         const response = await fetch(`${site}/transcribe/api/transcribe`, {
             method: 'POST',
             body: formData,
-            keepalive: true
+            keepalive: true,
+            credentials: 'include',
+            headers: {
+                // These MUST match Access-Control-Allow-Headers exactly:
+                'Content-Type': 'multipart/form-data',
+                'Accept': 'application/json',
+                'Authorization': `Bearer ${token}`,
+                'X-Requested-With': 'XMLHttpRequest' // If using
+            }
         });
 
         console.log("Fetch response received:", response);
