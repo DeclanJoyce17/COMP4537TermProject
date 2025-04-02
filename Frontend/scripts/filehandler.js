@@ -138,9 +138,10 @@ async function prepareAndSendAudio(file) {
     const formData = new FormData();
     formData.append('audio', file);
 
+    // To Check If FFMPEG Is Downloaded On Server Side
     // try {
     //     console.log("Testing FFmpeg installation...");
-    //     const ffmpegTest = await fetch(`/transcribe/test-ffmpeg`, {
+    //     const ffmpegTest = await fetch(`${site}/transcribe/test-ffmpeg`, {
     //         method: 'GET',
     //         credentials: 'include',
     //         headers: { 'Accept': 'application/json' }
