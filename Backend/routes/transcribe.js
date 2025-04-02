@@ -1,5 +1,4 @@
 const express = require('express');
-// const { pipeline } = require('@xenova/transformers');
 const ffmpeg = require('fluent-ffmpeg');
 const fs = require('fs');
 const wavDecoder = require('wav-decoder');
@@ -8,27 +7,19 @@ const path = require('path');
 const multer = require('multer');
 const router = express.Router();
 const { User, ResetToken, APICount } = require("../models");
-const { quantize } = require('bitsandbytes');
-
-const MODEL_PATH = path.normalize(path.join(process.cwd(), 'models', 'whisper-base'));
-process.env.TRANSFORMERS_CACHE = MODEL_PATH;
-process.env.HF_HUB_OFFLINE = "1";
-process.env.LOCAL_MODELS_DIR = MODEL_PATH;
-
-// Set up multer for file upload
 const upload = multer({ dest: 'uploads/' });
 
-const { exec } = require('child_process');
-router.get('/test-ffmpeg', (req, res) => {
-    exec('ffmpeg -version', (err, stdout, stderr) => {
-        if (err) {
-            console.error('FFmpeg test failed:', err);
-            return res.status(500).send('FFmpeg not installed');
-        }
-        // Corrected the response syntax
-        res.send(`<pre>FFmpeg installed:\n${stdout}</pre>`);
-    });
-});
+// const { exec } = require('child_process');
+// router.get('/test-ffmpeg', (req, res) => {
+//     exec('ffmpeg -version', (err, stdout, stderr) => {
+//         if (err) {
+//             console.error('FFmpeg test failed:', err);
+//             return res.status(500).send('FFmpeg not installed');
+//         }
+//         // Corrected the response syntax
+//         res.send(`<pre>FFmpeg installed:\n${stdout}</pre>`);
+//     });
+// });
 
 // Route to handle audio file upload and transcription
 router.post('/api/transcribe', upload.single('audio'), async (req, res) => {
@@ -51,46 +42,31 @@ router.post('/api/transcribe', upload.single('audio'), async (req, res) => {
     }
 });
 
-let transcriber = null;  // Declare transcriber globally
+// Load model once and reuse it
+let transcriber;
+let pipeline;
 
 async function loadModel() {
-    if (!transcriber) {
-        const { pipeline, AutoProcessor, WhisperForConditionalGeneration } = await import('@xenova/transformers');
+    if (!pipeline) {
+        const transformers = await import('@xenova/transformers');
+        pipeline = transformers.pipeline;
 
-        console.log('Loading Whisper model from:', MODEL_PATH);
+        console.log('Loading Whisper model from local path...');
 
-        try {
-            // Verify files exist first
-            verifyModelFiles();
+        // Set the environment variable to use local cache
+        process.env.HF_HOME = path.join(process.cwd(), 'models');
 
-            // Manually create processor
-            const processor = await AutoProcessor.from_pretrained(MODEL_PATH, {
-                local_files_only: true,
-                feature_extractor_type: "WhisperFeatureExtractor"
-            });
+        transcriber = await pipeline('automatic-speech-recognition', 'whisper-base', {
+            cache_dir: process.env.HF_HOME // Ensure model is loaded from local storage
+        });
 
-            // Create pipeline with explicit local files
-            transcriber = await pipeline('automatic-speech-recognition', {
-                model: MODEL_PATH,
-                processor: processor,
-                local_files_only: true
-            });
-
-            console.log('Model loaded successfully');
-        } catch (error) {
-            console.error('Model loading error:', error);
-            throw error;
-        }
+        console.log('Local model loaded successfully');
     }
     return transcriber;
 }
 
-
 // Main transcription function
 async function transcribeAudio(audioPath) {
-    process.env.HF_HUB_OFFLINE = "1"; // Force offline mode
-    process.env.HF_HUB_DISABLE_SYMLINKS = "1";
-
     const transcriber = await loadModel();
     const tempDir = path.join(os.tmpdir(), `temp-audio-${Date.now()}`);
     fs.mkdirSync(tempDir);
@@ -155,24 +131,5 @@ async function splitAudio(audioPath, outputDir, chunkSeconds = 10) {
             .run();
     });
 }
-
-function verifyModelFiles() {
-    const requiredFiles = [
-        'preprocessor_config.json',
-        'tokenizer_config.json',
-        'config.json',
-        path.join('onnx', 'encoder_model.onnx')
-    ];
-
-    requiredFiles.forEach(file => {
-        const fullPath = path.join(MODEL_PATH, file);
-        if (!fs.existsSync(fullPath)) {
-            throw new Error(`Missing required model file: ${fullPath}`);
-        }
-    });
-}
-
-// Call this before loadModel()
-verifyModelFiles();
 
 module.exports = router;
